@@ -1,8 +1,8 @@
 "use client"
 
-import { Lead } from "types/lead"
+import { Lead } from "@/types/lead"
 import { StatusBadge } from "./StatusBadge"
-import { Eye } from "lucide-react"
+import { Eye, Pencil } from "lucide-react"
 import Link from "next/link"
 
 export function LeadTable({ data }: { data: Lead[] }) {
@@ -61,13 +61,21 @@ export function LeadTable({ data }: { data: Lead[] }) {
                 <StatusBadge status={lead.status} />
               </td>
 
-              <td className="p-4 text-right">
+              <td className="p-4 text-right space-x-3">
                 <Link
                   href={`/leads/${lead.id}`}
                   className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                 >
                   <Eye size={16} />
                   Ver
+                </Link>
+
+                <Link
+                  href={`/leads/${lead.id}/edit`}
+                  className="inline-flex items-center gap-2 text-gray-600 hover:underline"
+                >
+                  <Pencil size={16} />
+                  Editar
                 </Link>
               </td>
             </tr>

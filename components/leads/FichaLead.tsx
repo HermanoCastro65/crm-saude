@@ -1,112 +1,327 @@
-import { Lead } from "types/lead"
+"use client"
 
-export function FichaLead({ lead }: { lead: Lead }) {
-  const ficha = lead.ficha
+import { Lead } from "@/types/lead"
+import { useState } from "react"
+
+type Props = {
+  lead: Lead
+  isNew?: boolean
+  onCreate?: (lead: Lead) => void
+}
+
+export function FichaLead({ lead, isNew, onCreate }: Props) {
+  const [data, setData] = useState<Lead>(
+    lead || {
+      id: crypto.randomUUID(),
+      nome: "",
+      telefone: "",
+      email: "",
+      origem: "",
+      status: "Novo",
+      createdAt: new Date().toISOString(),
+      ficha: {
+        idades: [],
+        quantidadeVidas: 1,
+        tipoPlano: "Individual",
+        localidade: "",
+        hospitaisPreferidos: [],
+        cotacoes: [],
+      },
+    }
+  )
+
+  const [editing, setEditing] = useState(isNew || false)
+
+  function update(field: string, value: any) {
+    setData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function updateFicha(field: string, value: any) {
+    setData((prev) => ({
+      ...prev,
+      ficha: { ...prev.ficha, [field]: value },
+    }))
+  }
+
+  function updateCotacao(index: number, field: string, value: any) {
+    const novas = [...data.ficha.cotacoes]
+    novas[index] = { ...novas[index], [field]: value }
+    updateFicha("cotacoes", novas)
+  }
+
+  function addCotacao() {
+    updateFicha("cotacoes", [
+      ...data.ficha.cotacoes,
+      {
+        id: crypto.randomUUID(),
+        titulo: "",
+        link: "",
+        valor: 0,
+        createdAt: new Date().toISOString(),
+      },
+    ])
+  }
+
+  function handleSave() {
+    if (isNew && onCreate) {
+      onCreate(data)
+    }
+    setEditing(false)
+  }
+
+  const isAtrasado =
+    data.ficha.proximoContato &&
+    new Date(data.ficha.proximoContato.data) < new Date()
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{lead.nome}</h1>
-        <p className="text-muted-foreground">
-          {lead.telefone} • {lead.email}
-        </p>
-      </div>
+    <div className="max-w-5xl mx-auto space-y-8">
 
-      <div className="grid grid-cols-3 gap-4">
-        <Card title="Tipo de Plano" value={ficha.tipoPlano} />
-        <Card title="Vidas" value={ficha.quantidadeVidas} />
-        <Card title="Localidade" value={ficha.localidade} />
-      </div>
+      {/* HEADER */}
+      <div className="card flex justify-between">
+        <div className="space-y-3 w-full max-w-xl">
 
-      <div className="bg-card border rounded-2xl p-4">
-        <h2 className="font-semibold mb-2">Idades</h2>
-        <p>{ficha.idades.join(", ")}</p>
-      </div>
+          {editing ? (
+            <input
+              className="input text-3xl font-semibold"
+              value={data.nome}
+              onChange={(e) => update("nome", e.target.value)}
+            />
+          ) : (
+            <h1 className="text-3xl font-semibold">{data.nome || "Novo Lead"}</h1>
+          )}
 
-      <div className="bg-card border rounded-2xl p-4">
-        <h2 className="font-semibold mb-2">Hospitais</h2>
-        <ul className="list-disc ml-5">
-          {ficha.hospitaisPreferidos.map((h, i) => (
-            <li key={i}>{h}</li>
-          ))}
-        </ul>
-      </div>
+          {/* TELEFONE */}
+          <div>
+            <p className="label">Telefone</p>
+            {editing ? (
+              <input
+                className="input"
+                value={data.telefone}
+                onChange={(e) => update("telefone", e.target.value)}
+              />
+            ) : (
+              <p>{data.telefone || "-"}</p>
+            )}
+          </div>
 
-      <div className="bg-card border rounded-2xl p-4">
-        <h2 className="font-semibold mb-4">Cotações</h2>
-
-        <div className="space-y-3">
-          {ficha.cotacoes.map((c) => (
-            <div
-              key={c.id}
-              className="border rounded-xl p-3 flex justify-between items-center"
-            >
-              <div>
-                <p className="font-medium">{c.titulo}</p>
-                <p className="text-xs text-muted-foreground">
-                  {c.createdAt}
-                </p>
-              </div>
-
-              <div className="text-right">
-                <p className="font-bold text-blue-600">
-                  R$ {c.valor}
-                </p>
-                <a
-                  href={c.link}
-                  target="_blank"
-                  className="text-xs text-blue-600 hover:underline"
-                >
-                  Ver cotação
-                </a>
-              </div>
-            </div>
-          ))}
+          {/* EMAIL */}
+          <div>
+            <p className="label">Email</p>
+            {editing ? (
+              <input
+                className="input"
+                value={data.email || ""}
+                onChange={(e) => update("email", e.target.value)}
+              />
+            ) : (
+              <p>{data.email || "-"}</p>
+            )}
+          </div>
         </div>
+
+        <button
+          onClick={editing ? handleSave : () => setEditing(true)}
+          className={editing ? "btn-success" : "btn-primary"}
+        >
+          {editing ? "Salvar" : "Editar"}
+        </button>
       </div>
 
+      {/* INFO */}
       <div className="grid grid-cols-3 gap-4">
-        <Card
-          title="Primeiro Contato"
-          value={
-            ficha.primeiroContato
-              ? `${ficha.primeiroContato.data} (${ficha.primeiroContato.diaSemana})`
-              : "-"
-          }
-        />
-        <Card
-          title="Último Contato"
-          value={
-            ficha.ultimoContato
-              ? `${ficha.ultimoContato.data} (${ficha.ultimoContato.diaSemana})`
-              : "-"
-          }
-        />
-        <Card
-          title="Próximo Contato"
-          value={
-            ficha.proximoContato
-              ? `${ficha.proximoContato.data} (${ficha.proximoContato.diaSemana})`
-              : "-"
-          }
-        />
+        <Card title="Origem">
+          {editing ? (
+            <input className="input" value={data.origem} onChange={(e) => update("origem", e.target.value)} />
+          ) : data.origem}
+        </Card>
+
+        <Card title="Status">
+          {editing ? (
+            <select className="input" value={data.status} onChange={(e) => update("status", e.target.value)}>
+              <option>Novo</option>
+              <option>Contato</option>
+              <option>Cotação</option>
+              <option>Fechado</option>
+              <option>Perdido</option>
+            </select>
+          ) : data.status}
+        </Card>
+
+        <Card title="Criado em">
+          {editing ? (
+            <input
+              className="input"
+              value={data.createdAt}
+              onChange={(e) => update("createdAt", e.target.value)}
+            />
+          ) : (
+            new Date(data.createdAt).toLocaleDateString()
+          )}
+        </Card>
       </div>
 
-      {ficha.observacoes && (
-        <div className="bg-card border rounded-2xl p-4">
-          <h2 className="font-semibold mb-2">Observações</h2>
-          <p className="text-sm">{ficha.observacoes}</p>
+      {/* CONTATOS */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card title="Primeiro Contato">
+          {editing ? (
+            <input className="input" value={data.createdAt} onChange={(e) => update("createdAt", e.target.value)} />
+          ) : new Date(data.createdAt).toLocaleDateString()}
+        </Card>
+
+        <Card title="Último Contato">
+          {editing ? (
+            <input
+              className="input"
+              value={data.ficha.ultimoContato?.data || ""}
+              onChange={(e) =>
+                updateFicha("ultimoContato", {
+                  ...(data.ficha.ultimoContato || {}),
+                  data: e.target.value,
+                  diaSemana: "",
+                })
+              }
+            />
+          ) : data.ficha.ultimoContato?.data || "-"}
+        </Card>
+
+        <Card title="Próximo Contato">
+          {editing ? (
+            <input
+              className="input"
+              value={data.ficha.proximoContato?.data || ""}
+              onChange={(e) =>
+                updateFicha("proximoContato", {
+                  ...(data.ficha.proximoContato || {}),
+                  data: e.target.value,
+                  diaSemana: "",
+                })
+              }
+            />
+          ) : (
+            <span className={isAtrasado ? "text-red-600 font-bold" : ""}>
+              {data.ficha.proximoContato?.data || "-"}
+            </span>
+          )}
+        </Card>
+      </div>
+
+      {/* FICHA */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card title="Plano">
+          {editing ? (
+            <input className="input" value={data.ficha.tipoPlano} onChange={(e) => updateFicha("tipoPlano", e.target.value)} />
+          ) : data.ficha.tipoPlano}
+        </Card>
+
+        <Card title="Vidas">
+          {editing ? (
+            <input type="number" className="input" value={data.ficha.quantidadeVidas} onChange={(e) => updateFicha("quantidadeVidas", Number(e.target.value))} />
+          ) : data.ficha.quantidadeVidas}
+        </Card>
+
+        <Card title="Local">
+          {editing ? (
+            <input className="input" value={data.ficha.localidade} onChange={(e) => updateFicha("localidade", e.target.value)} />
+          ) : data.ficha.localidade}
+        </Card>
+      </div>
+
+      {/* IDADES */}
+      <Card title="Idades">
+        {editing ? (
+          <input
+            className="input"
+            value={data.ficha.idades.join(", ")}
+            onChange={(e) =>
+              updateFicha(
+                "idades",
+                e.target.value.split(",").map((i) => Number(i.trim()))
+              )
+            }
+          />
+        ) : data.ficha.idades.join(", ") || "-"}
+      </Card>
+
+      {/* HOSPITAIS */}
+      <Card title="Hospitais">
+        {editing ? (
+          <input
+            className="input"
+            value={data.ficha.hospitaisPreferidos.join(", ")}
+            onChange={(e) =>
+              updateFicha(
+                "hospitaisPreferidos",
+                e.target.value.split(",")
+              )
+            }
+          />
+        ) : data.ficha.hospitaisPreferidos.join(", ") || "-"}
+      </Card>
+
+      {/* PLANO ATUAL */}
+      <Card title="Plano Atual">
+        {editing ? (
+          <div className="flex gap-2">
+            <input className="input" placeholder="Operadora"
+              value={data.ficha.planoAtual?.operadora || ""}
+              onChange={(e) =>
+                updateFicha("planoAtual", {
+                  ...(data.ficha.planoAtual || {}),
+                  operadora: e.target.value,
+                })
+              }
+            />
+            <input className="input" type="number" placeholder="Valor"
+              value={data.ficha.planoAtual?.valor || ""}
+              onChange={(e) =>
+                updateFicha("planoAtual", {
+                  ...(data.ficha.planoAtual || {}),
+                  valor: Number(e.target.value),
+                })
+              }
+            />
+          </div>
+        ) : data.ficha.planoAtual
+          ? `${data.ficha.planoAtual.operadora} - R$ ${data.ficha.planoAtual.valor}`
+          : "-"}
+      </Card>
+
+      {/* COTAÇÕES */}
+      <div className="card space-y-4">
+        <div className="flex justify-between">
+          <h2 className="font-semibold">Cotações</h2>
+          {editing && (
+            <button onClick={addCotacao} className="text-blue-600 text-sm">
+              + Adicionar
+            </button>
+          )}
         </div>
-      )}
+
+        {data.ficha.cotacoes.map((c, i) => (
+          <div key={c.id} className="grid grid-cols-4 gap-2 border p-3 rounded-xl">
+            <input className="input" value={c.titulo} onChange={(e) => updateCotacao(i, "titulo", e.target.value)} />
+            <input className="input" value={c.link} onChange={(e) => updateCotacao(i, "link", e.target.value)} />
+            <input className="input" type="number" value={c.valor} onChange={(e) => updateCotacao(i, "valor", Number(e.target.value))} />
+            <input className="input" value={c.createdAt} onChange={(e) => updateCotacao(i, "createdAt", e.target.value)} />
+          </div>
+        ))}
+      </div>
+
+      {/* OBS */}
+      <Card title="Observações">
+        {editing ? (
+          <textarea className="input" value={data.ficha.observacoes || ""} onChange={(e) => updateFicha("observacoes", e.target.value)} />
+        ) : data.ficha.observacoes || "-"}
+      </Card>
     </div>
   )
 }
 
-function Card({ title, value }: { title: string; value: any }) {
+function Card({ title, children }: any) {
   return (
-    <div className="bg-card border rounded-2xl p-4">
-      <p className="text-xs text-muted-foreground">{title}</p>
-      <p className="font-semibold">{value}</p>
+    <div className="card">
+      <p className="label mb-1">{title}</p>
+      <div className="font-medium">{children}</div>
     </div>
   )
 }
