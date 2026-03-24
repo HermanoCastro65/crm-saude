@@ -2,13 +2,17 @@
 
 import { useState } from "react"
 import { Lead, TipoPlano } from "@/types/lead"
+import { useLeadsStore } from "@/store/leadsStore"
 
 type Props = {
   initialData?: Lead
-  onSubmit: (lead: Lead) => void
+  onSubmit?: (lead: Lead) => void
 }
 
 export function LeadForm({ initialData, onSubmit }: Props) {
+  const createLead = useLeadsStore((state) => state.createLead)
+  const updateLead = useLeadsStore((state) => state.updateLead)
+
   const [form, setForm] = useState<Lead>(
     initialData || {
       id: crypto.randomUUID(),
@@ -18,7 +22,6 @@ export function LeadForm({ initialData, onSubmit }: Props) {
       origem: "",
       status: "Novo",
       createdAt: new Date().toISOString(),
-
       ficha: {
         idades: [],
         quantidadeVidas: 1,
@@ -41,9 +44,16 @@ export function LeadForm({ initialData, onSubmit }: Props) {
     }))
   }
 
-  function handleSubmit(e: any) {
+  async function handleSubmit(e: any) {
     e.preventDefault()
-    onSubmit(form)
+
+    if (initialData) {
+      await updateLead(form)
+    } else {
+      await createLead(form)
+    }
+
+    if (onSubmit) onSubmit(form)
   }
 
   return (
@@ -65,7 +75,7 @@ export function LeadForm({ initialData, onSubmit }: Props) {
       <input
         placeholder="Email"
         className="w-full border p-2 rounded"
-        value={form.email}
+        value={form.email || ""}
         onChange={(e) => handleChange("email", e.target.value)}
       />
 

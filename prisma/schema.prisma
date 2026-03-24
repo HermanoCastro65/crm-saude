@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Lead {
+  id        String     @id @default(uuid())
+  nome      String
+  telefone  String
+  email     String?
+  origem    String
+  status    LeadStatus
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  ficha     FichaLead?
+}
+
+model FichaLead {
+  id                String   @id @default(uuid())
+  leadId            String   @unique
+
+  idades            Json
+  quantidadeVidas   Int
+  tipoPlano         TipoPlano
+
+  localidade        String
+  hospitais         Json
+
+  planoAtual        Json?
+
+  cotacoes          Cotacao[]
+
+  primeiroContato   Json?
+  ultimoContato     Json?
+  proximoContato    Json?
+
+  observacoes       String?
+
+  lead              Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model Cotacao {
+  id        String   @id @default(uuid())
+  fichaId   String
+
+  titulo    String
+  link      String
+  valor     Float
+  createdAt DateTime @default(now())
+
+  ficha     FichaLead @relation(fields: [fichaId], references: [id], onDelete: Cascade)
+}
+
+enum LeadStatus {
+  Novo
+  Contato
+  Cotacao
+  Fechado
+  Perdido
+}
+
+enum TipoPlano {
+  Individual
+  PME
+  Adesao
+  Familiar
+  Senior
+  Dental
+}

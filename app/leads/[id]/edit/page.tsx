@@ -1,30 +1,37 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { leads } from "@/mocks/leads"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { LeadForm } from "@/components/leads/LeadForm"
+import { useEffect, useState } from "react"
+import { Lead } from "@/types/lead"
 
 export default function EditLeadPage() {
   const params = useParams()
   const router = useRouter()
+  const [lead, setLead] = useState<Lead | null>(null)
 
-  const leadIndex = leads.findIndex((l) => l.id === params.id)
-  const lead = leads[leadIndex]
+  useEffect(() => {
+    async function load() {
+      const res = await fetch(`/api/leads/${params.id}`)
+      if (!res.ok) return
+      const data = await res.json()
+      setLead(data)
+    }
 
-  function handleUpdate(updated: any) {
-    leads[leadIndex] = updated
+    load()
+  }, [params.id])
+
+  if (!lead) return <div>Carregando...</div>
+
+  function handleUpdate() {
     router.push("/leads")
   }
-
-  if (!lead) return <div>Lead não encontrado</div>
 
   return (
     <AppLayout>
       <div className="max-w-xl">
-        <h1 className="text-xl font-bold mb-4">
-          Editar Lead
-        </h1>
+        <h1 className="text-xl font-bold mb-4">Editar Lead</h1>
 
         <LeadForm initialData={lead} onSubmit={handleUpdate} />
       </div>

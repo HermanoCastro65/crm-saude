@@ -1,12 +1,19 @@
 "use client"
 
 import { AppLayout } from "@/components/layout/AppLayout"
-import { leads } from "@/mocks/leads"
 import Link from "next/link"
 import { Eye, Pencil } from "lucide-react"
 import { StatusBadge } from "@/components/leads/StatusBadge"
+import { useEffect } from "react"
+import { useLeadsStore } from "@/store/leadsStore"
 
 export default function LeadsPage() {
+  const { leads, fetchLeads } = useLeadsStore()
+
+  useEffect(() => {
+    fetchLeads()
+  }, [fetchLeads])
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -38,36 +45,17 @@ export default function LeadsPage() {
 
             <tbody>
               {leads.map((lead) => (
-                <tr
-                  key={lead.id}
-                  className="border-t hover:bg-muted/50 transition"
-                >
-                  <td className="p-4 font-medium">
-                    {lead.nome}
-                  </td>
-
+                <tr key={lead.id} className="border-t hover:bg-muted/50 transition">
+                  <td className="p-4 font-medium">{lead.nome}</td>
                   <td className="p-4">{lead.telefone}</td>
-
-                  <td className="p-4">
-                    {lead.email || "-"}
-                  </td>
-
+                  <td className="p-4">{lead.email || "-"}</td>
                   <td className="p-4">{lead.origem}</td>
+                  <td className="p-4">{lead.ficha?.tipoPlano || "-"}</td>
+                  <td className="p-4">{lead.ficha?.quantidadeVidas || "-"}</td>
+                  <td className="p-4">{lead.ficha?.localidade || "-"}</td>
 
                   <td className="p-4">
-                    {lead.ficha.tipoPlano}
-                  </td>
-
-                  <td className="p-4">
-                    {lead.ficha.quantidadeVidas}
-                  </td>
-
-                  <td className="p-4">
-                    {lead.ficha.localidade}
-                  </td>
-
-                  <td className="p-4">
-                    {lead.ficha.proximoContato ? (
+                    {lead.ficha?.proximoContato ? (
                       <div>
                         <div className="font-medium">
                           {lead.ficha.proximoContato.data}
@@ -97,7 +85,7 @@ export default function LeadsPage() {
                     </Link>
 
                     <Link
-                      href={`/leads/${lead.id}`}
+                      href={`/leads/${lead.id}/edit`}
                       className="inline-flex items-center gap-2 text-gray-600 hover:underline"
                     >
                       <Pencil size={16} />

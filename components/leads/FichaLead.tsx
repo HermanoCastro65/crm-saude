@@ -1,5 +1,7 @@
 "use client"
 
+"use client"
+
 import { Lead } from "@/types/lead"
 import { useState } from "react"
 import { useLeadsStore } from "@/store/leadsStore"
@@ -33,8 +35,8 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
 
   const [editing, setEditing] = useState(isNew || false)
 
-  const updateLeadStore = useLeadsStore((state) => state.updateLead)
-  const addLeadStore = useLeadsStore((state) => state.addLead)
+  const createLead = useLeadsStore((state) => state.createLead)
+  const updateLead = useLeadsStore((state) => state.updateLead)
 
   function update(field: string, value: any) {
     setData((prev) => ({ ...prev, [field]: value }))
@@ -66,16 +68,36 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
     ])
   }
 
-  function handleSave() {
-    if (isNew) {
-      addLeadStore(data)
-      if (onCreate) onCreate(data)
-    } else {
-      updateLeadStore(data)
-    }
+async function handleSave() {
+  if (isNew) {
+    await fetch("/api/leads", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
 
-    setEditing(false)
+    if (onCreate) onCreate(data)
+  } else {
+    // 🔥 atualiza lead
+    await fetch(`/api/leads/${data.id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+
+    // 🔥 salva cada cotação
+    for (const cotacao of data.ficha.cotacoes) {
+      await fetch(`/api/leads/${data.id}/cotacoes`, {
+        method: "POST",
+        body: JSON.stringify({
+          titulo: cotacao.titulo,
+          link: cotacao.link,
+          valor: cotacao.valor,
+        }),
+      })
+    }
   }
+
+  setEditing(false)
+}
 
   const isAtrasado =
     data.ficha.proximoContato &&
@@ -280,7 +302,7 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
         {editing ? (
           <input
             className="input"
-            value={data.ficha.hospitaisPreferidos.join(", ")}
+            value={(data.ficha.hospitaisPreferidos || []).join(", ") || "-"}
             onChange={(e) =>
               updateFicha(
                 "hospitaisPreferidos",
@@ -288,7 +310,7 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
               )
             }
           />
-        ) : data.ficha.hospitaisPreferidos.join(", ") || "-"}
+        ) : (data.ficha.hospitaisPreferidos || []).join(", ") || "-"}
       </Card>
 
       {/* PLANO ATUAL */}
