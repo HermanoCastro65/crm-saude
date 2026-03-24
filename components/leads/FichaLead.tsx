@@ -2,6 +2,7 @@
 
 import { Lead } from "@/types/lead"
 import { useState } from "react"
+import { useLeadsStore } from "@/store/leadsStore"
 
 type Props = {
   lead: Lead
@@ -31,6 +32,9 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
   )
 
   const [editing, setEditing] = useState(isNew || false)
+
+  const updateLeadStore = useLeadsStore((state) => state.updateLead)
+  const addLeadStore = useLeadsStore((state) => state.addLead)
 
   function update(field: string, value: any) {
     setData((prev) => ({ ...prev, [field]: value }))
@@ -63,9 +67,13 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
   }
 
   function handleSave() {
-    if (isNew && onCreate) {
-      onCreate(data)
+    if (isNew) {
+      addLeadStore(data)
+      if (onCreate) onCreate(data)
+    } else {
+      updateLeadStore(data)
     }
+
     setEditing(false)
   }
 
@@ -171,36 +179,46 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
         <Card title="Último Contato">
           {editing ? (
             <input
+              type="date"
               className="input"
               value={data.ficha.ultimoContato?.data || ""}
-              onChange={(e) =>
+              onChange={(e) => {
+                const date = new Date(e.target.value)
+
                 updateFicha("ultimoContato", {
-                  ...(data.ficha.ultimoContato || {}),
                   data: e.target.value,
-                  diaSemana: "",
+                  diaSemana: date.toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                  }),
                 })
-              }
+              }}
             />
-          ) : data.ficha.ultimoContato?.data || "-"}
+          ) : (
+            `${data.ficha.ultimoContato?.data || "-"} ${data.ficha.ultimoContato?.diaSemana || ""
+            }`
+          )}
         </Card>
 
         <Card title="Próximo Contato">
           {editing ? (
             <input
+              type="date"
               className="input"
               value={data.ficha.proximoContato?.data || ""}
-              onChange={(e) =>
+              onChange={(e) => {
+                const date = new Date(e.target.value)
+
                 updateFicha("proximoContato", {
-                  ...(data.ficha.proximoContato || {}),
                   data: e.target.value,
-                  diaSemana: "",
+                  diaSemana: date.toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                  }),
                 })
-              }
+              }}
             />
           ) : (
-            <span className={isAtrasado ? "text-red-600 font-bold" : ""}>
-              {data.ficha.proximoContato?.data || "-"}
-            </span>
+            `${data.ficha.proximoContato?.data || "-"} ${data.ficha.proximoContato?.diaSemana || ""
+            }`
           )}
         </Card>
       </div>
@@ -209,8 +227,23 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
       <div className="grid grid-cols-3 gap-4">
         <Card title="Plano">
           {editing ? (
-            <input className="input" value={data.ficha.tipoPlano} onChange={(e) => updateFicha("tipoPlano", e.target.value)} />
-          ) : data.ficha.tipoPlano}
+            <select
+              className="input"
+              value={data.ficha.tipoPlano}
+              onChange={(e) =>
+                updateFicha("tipoPlano", e.target.value)
+              }
+            >
+              <option>Individual</option>
+              <option>PME</option>
+              <option>Adesão</option>
+              <option>Familiar</option>
+              <option>Sênior</option>
+              <option>Dental</option>
+            </select>
+          ) : (
+            data.ficha.tipoPlano
+          )}
         </Card>
 
         <Card title="Vidas">

@@ -1,13 +1,20 @@
 "use client"
 
-import { leads } from "@/mocks/leads"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Plus } from "lucide-react"
+import { useLeadsStore } from "@/store/leadsStore"
+import type { Lead } from "@/types/lead"
 
-const statusList = ["Novo", "Contato", "Cotação", "Fechado", "Perdido"]
+const statusList: Lead["status"][] = [
+  "Novo",
+  "Contato",
+  "Cotação",
+  "Fechado",
+  "Perdido",
+]
 
-const statusColors: Record<string, string> = {
+const statusColors: Record<Lead["status"], string> = {
   Novo: "bg-gray-400",
   Contato: "bg-blue-400",
   Cotação: "bg-yellow-400",
@@ -18,13 +25,15 @@ const statusColors: Record<string, string> = {
 export function Sidebar() {
   const pathname = usePathname()
 
+  const leads = useLeadsStore((state) => state.leads)
+
   return (
     <aside className="w-72 h-screen bg-gradient-to-b from-blue-700 to-blue-500 text-white p-4 overflow-y-auto">
       <h1 className="text-xl font-bold mb-6">CRM Saúde</h1>
 
       <Link
         href="/leads/new"
-        className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-white text-blue-700 font-semibold text-sm shadow hover:scale-[1.02]"
+        className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-white text-blue-700 font-semibold text-sm shadow hover:scale-[1.02] transition"
       >
         <Plus size={16} />
         Novo Lead
@@ -38,7 +47,7 @@ export function Sidebar() {
       </Link>
 
       {statusList.map((status) => {
-        const filtered = leads.filter((l) => l.status === status)
+        const filtered = leads.filter((l: Lead) => l.status === status)
 
         return (
           <div key={status} className="mb-6">
@@ -46,7 +55,7 @@ export function Sidebar() {
               {status} ({filtered.length})
             </h2>
 
-            {filtered.map((lead) => {
+            {filtered.map((lead: Lead) => {
               const active = pathname === `/leads/${lead.id}`
 
               return (
