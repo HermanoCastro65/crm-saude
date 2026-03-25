@@ -1,26 +1,34 @@
 import { prisma } from "@/lib/prisma"
 
+function getIdFromUrl(req: Request) {
+  const url = new URL(req.url)
+  return url.pathname.split("/")[3]
+}
+
 export async function POST(req: Request) {
   try {
-    const url = new URL(req.url)
-    const parts = url.pathname.split("/")
-    const id = parts[3] // /api/leads/{id}/cotacoes
+    const id = getIdFromUrl(req)
 
     if (!id) {
-      return new Response(JSON.stringify({ error: "ID inválido" }), {
-        status: 400,
-      })
+      return Response.json({ error: "ID inválido" }, { status: 400 })
     }
 
     const body = await req.json()
 
+    if (!body.titulo || !body.valor) {
+      return Response.json(
+        { error: "Título e valor são obrigatórios" },
+        { status: 400 }
+      )
+    }
+
     const ficha = await prisma.fichaLead.findUnique({
-      where: { leadId: id },
+      where: { leadId: id }
     })
 
     if (!ficha) {
-      return new Response(
-        JSON.stringify({ error: "Ficha não encontrada" }),
+      return Response.json(
+        { error: "Ficha não encontrada" },
         { status: 404 }
       )
     }
@@ -29,22 +37,17 @@ export async function POST(req: Request) {
       data: {
         fichaId: ficha.id,
         titulo: body.titulo,
-        link: body.link,
-        valor: body.valor,
-      },
+        link: body.link ?? "",
+        valor: body.valor
+      }
     })
 
-    return new Response(JSON.stringify(cotacao), {
-      headers: { "Content-Type": "application/json" },
-    })
+    return Response.json(cotacao)
   } catch (error: any) {
     console.error("ERRO COTACAO:", error)
 
-    return new Response(
-      JSON.stringify({
-        error: "Erro ao criar cotação",
-        details: error.message,
-      }),
+    return Response.json(
+      { error: "Erro ao criar cotação", details: error.message },
       { status: 500 }
     )
   }

@@ -40,17 +40,20 @@ export const useLeadsStore = create<LeadsState>((set) => ({
     }))
   },
 
-  updateLead: async (lead) => {
-    const res = await fetch(`/api/leads/${lead.id}`, {
+  updateLead: async (updatedLead) => {
+    const res = await fetch(`/api/leads/${updatedLead.id}`, {
       method: "PUT",
-      body: JSON.stringify(lead),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedLead),
     })
+
+    if (!res.ok) throw new Error("Erro ao atualizar")
 
     const updated = await res.json()
 
     set((state) => ({
-      leads: state.leads.map((l) =>
-        l.id === updated.id ? updated : l
+      leads: state.leads.map((lead) =>
+        lead.id === updated.id ? { ...lead, ...updated } : lead
       ),
     }))
   },

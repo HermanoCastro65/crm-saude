@@ -4,9 +4,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Plus } from "lucide-react"
 import { useLeadsStore } from "@/store/leadsStore"
-import type { Lead } from "@/types/lead"
 
-const statusList: Lead["status"][] = [
+// 🔥 TIPO SEGURO
+type StatusType = "Novo" | "Contato" | "Cotação" | "Fechado" | "Perdido"
+
+const statusList: StatusType[] = [
   "Novo",
   "Contato",
   "Cotação",
@@ -14,7 +16,7 @@ const statusList: Lead["status"][] = [
   "Perdido",
 ]
 
-const statusColors: Record<Lead["status"], string> = {
+const statusColors: Record<StatusType, string> = {
   Novo: "bg-gray-400",
   Contato: "bg-blue-400",
   Cotação: "bg-yellow-400",
@@ -22,10 +24,22 @@ const statusColors: Record<Lead["status"], string> = {
   Perdido: "bg-red-400",
 }
 
+// 🔥 NORMALIZA BACKEND → FRONT
+function normalizeStatus(status: string): StatusType {
+  if (!status) return "Novo"
+
+  if (status === "Cotacao") return "Cotação"
+  if (status === "Novo") return "Novo"
+  if (status === "Contato") return "Contato"
+  if (status === "Fechado") return "Fechado"
+  if (status === "Perdido") return "Perdido"
+
+  return "Novo"
+}
+
 export function Sidebar() {
   const pathname = usePathname()
-
-  const leads = useLeadsStore((state) => state.leads)
+  const leads = useLeadsStore((state) => state.leads || [])
 
   return (
     <aside className="w-72 h-screen bg-gradient-to-b from-blue-700 to-blue-500 text-white p-4 overflow-y-auto">
@@ -47,7 +61,9 @@ export function Sidebar() {
       </Link>
 
       {statusList.map((status) => {
-        const filtered = leads.filter((l: Lead) => l.status === status)
+        const filtered = leads.filter(
+          (l) => normalizeStatus(l.status) === status
+        )
 
         return (
           <div key={status} className="mb-6">
@@ -55,8 +71,9 @@ export function Sidebar() {
               {status} ({filtered.length})
             </h2>
 
-            {filtered.map((lead: Lead) => {
+            {filtered.map((lead) => {
               const active = pathname === `/leads/${lead.id}`
+              const normalized = normalizeStatus(lead.status)
 
               return (
                 <Link
@@ -70,7 +87,9 @@ export function Sidebar() {
                   }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${statusColors[lead.status]}`}
+                    className={`w-2 h-2 rounded-full ${
+                      statusColors[normalized]
+                    }`}
                   />
                   {lead.nome}
                 </Link>

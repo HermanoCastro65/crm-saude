@@ -12,17 +12,24 @@ export default function EditLeadPage() {
   const [lead, setLead] = useState<Lead | null>(null)
 
   useEffect(() => {
+    if (!params?.id) return
+
     async function load() {
-      const res = await fetch(`/api/leads/${params.id}`)
-      if (!res.ok) return
-      const data = await res.json()
-      setLead(data)
+      try {
+        const res = await fetch(`/api/leads/${params.id}`)
+        if (!res.ok) return
+
+        const data = await res.json()
+        setLead(data)
+      } catch (err) {
+        console.error("Erro ao carregar lead", err)
+      }
     }
 
     load()
-  }, [params.id])
+  }, [params?.id])
 
-  if (!lead) return <div>Carregando...</div>
+  if (!lead) return <div className="p-6">Carregando...</div>
 
   function handleUpdate() {
     router.push("/leads")
@@ -32,7 +39,6 @@ export default function EditLeadPage() {
     <AppLayout>
       <div className="max-w-xl">
         <h1 className="text-xl font-bold mb-4">Editar Lead</h1>
-
         <LeadForm initialData={lead} onSubmit={handleUpdate} />
       </div>
     </AppLayout>

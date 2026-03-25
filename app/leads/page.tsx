@@ -8,92 +8,92 @@ import { useEffect } from "react"
 import { useLeadsStore } from "@/store/leadsStore"
 
 export default function LeadsPage() {
-  const { leads, fetchLeads } = useLeadsStore()
+  const { leads = [], fetchLeads } = useLeadsStore()
 
   useEffect(() => {
     fetchLeads()
-  }, [fetchLeads])
+  }, [])
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Todos os Leads</h1>
-            <p className="text-muted-foreground">
-              Visualize e gerencie todos os leads
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold">Todos os Leads</h1>
+          <p className="text-muted-foreground">
+            Visualize e gerencie todos os leads
+          </p>
         </div>
 
         <div className="bg-card border rounded-2xl shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted text-muted-foreground">
               <tr>
-                <th className="text-left p-4">Nome</th>
-                <th className="text-left p-4">Contato</th>
-                <th className="text-left p-4">Email</th>
-                <th className="text-left p-4">Origem</th>
-                <th className="text-left p-4">Plano</th>
-                <th className="text-left p-4">Vidas</th>
-                <th className="text-left p-4">Localidade</th>
-                <th className="text-left p-4">Próx. Contato</th>
-                <th className="text-left p-4">Status</th>
-                <th className="text-right p-4">Ações</th>
+                <th className="p-4 text-left">Nome</th>
+                <th className="p-4 text-left">Contato</th>
+                <th className="p-4 text-left">Email</th>
+                <th className="p-4 text-left">Origem</th>
+                <th className="p-4 text-left">Plano</th>
+                <th className="p-4 text-left">Vidas</th>
+                <th className="p-4 text-left">Localidade</th>
+                <th className="p-4 text-left">Próx. Contato</th>
+                <th className="p-4 text-left">Status</th>
+                <th className="p-4 text-right">Ações</th>
               </tr>
             </thead>
 
             <tbody>
-              {leads.map((lead) => (
-                <tr key={lead.id} className="border-t hover:bg-muted/50 transition">
-                  <td className="p-4 font-medium">{lead.nome}</td>
-                  <td className="p-4">{lead.telefone}</td>
-                  <td className="p-4">{lead.email || "-"}</td>
-                  <td className="p-4">{lead.origem}</td>
-                  <td className="p-4">{lead.ficha?.tipoPlano || "-"}</td>
-                  <td className="p-4">{lead.ficha?.quantidadeVidas || "-"}</td>
-                  <td className="p-4">{lead.ficha?.localidade || "-"}</td>
-
-                  <td className="p-4">
-                    {lead.ficha?.proximoContato ? (
-                      <div>
-                        <div className="font-medium">
-                          {lead.ficha.proximoContato.data}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {lead.ficha.proximoContato.diaSemana}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">
-                        —
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="p-4">
-                    <StatusBadge status={lead.status} />
-                  </td>
-
-                  <td className="p-4 text-right space-x-3">
-                    <Link
-                      href={`/leads/${lead.id}`}
-                      className="inline-flex items-center gap-2 text-blue-600 hover:underline"
-                    >
-                      <Eye size={16} />
-                      Ver
-                    </Link>
-
-                    <Link
-                      href={`/leads/${lead.id}/edit`}
-                      className="inline-flex items-center gap-2 text-gray-600 hover:underline"
-                    >
-                      <Pencil size={16} />
-                      Editar
-                    </Link>
+              {leads.length === 0 && (
+                <tr>
+                  <td colSpan={10} className="p-6 text-center text-muted-foreground">
+                    Nenhum lead encontrado
                   </td>
                 </tr>
-              ))}
+              )}
+
+              {leads.map((lead) => {
+                const ficha = lead.ficha || {}
+
+                return (
+                  <tr key={lead.id} className="border-t hover:bg-muted/50">
+                    <td className="p-4 font-medium">{lead.nome}</td>
+                    <td className="p-4">{lead.telefone}</td>
+                    <td className="p-4">{lead.email || "-"}</td>
+                    <td className="p-4">{lead.origem}</td>
+
+                    <td className="p-4">{ficha.tipoPlano || "-"}</td>
+                    <td className="p-4">{ficha.quantidadeVidas || "-"}</td>
+                    <td className="p-4">{ficha.localidade || "-"}</td>
+
+                    <td className="p-4">
+                      {ficha.proximoContato ? (
+                        <div>
+                          <div className="font-medium">
+                            {ficha.proximoContato.data}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {ficha.proximoContato.diaSemana}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+
+                    <td className="p-4">
+                      <StatusBadge status={lead.status} />
+                    </td>
+
+                    <td className="p-4 text-right space-x-3">
+                      <Link href={`/leads/${lead.id}`}>
+                        <Eye size={16} />
+                      </Link>
+                      <Link href={`/leads/${lead.id}/edit`}>
+                        <Pencil size={16} />
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

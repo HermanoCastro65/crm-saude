@@ -11,15 +11,22 @@ export default function LeadPage() {
   const [lead, setLead] = useState<Lead | null>(null)
 
   useEffect(() => {
+    if (!params?.id) return
+
     async function load() {
-      const res = await fetch(`/api/leads/${params.id}`)
-      if (!res.ok) return
-      const data = await res.json()
-      setLead(data)
+      try {
+        const res = await fetch(`/api/leads/${params.id}`)
+        if (!res.ok) return
+
+        const data = await res.json()
+        setLead(data)
+      } catch (err) {
+        console.error("Erro ao carregar lead", err)
+      }
     }
 
     load()
-  }, [params.id])
+  }, [params?.id])
 
   if (!lead) {
     return (

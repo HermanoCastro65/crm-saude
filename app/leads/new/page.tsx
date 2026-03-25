@@ -8,6 +8,7 @@ export default function NewLeadPage() {
   const router = useRouter()
 
   function handleCreate(newLead: any) {
+    if (!newLead?.id) return
     router.push(`/leads/${newLead.id}`)
   }
 

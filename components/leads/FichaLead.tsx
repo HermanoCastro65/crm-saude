@@ -1,7 +1,5 @@
 "use client"
 
-"use client"
-
 import { Lead } from "@/types/lead"
 import { useState } from "react"
 import { useLeadsStore } from "@/store/leadsStore"
@@ -33,7 +31,8 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
     }
   )
 
-  const [editing, setEditing] = useState(isNew || false)
+  const [editing, setEditing] = useState(false)
+  if (!data?.ficha) return null
 
   const createLead = useLeadsStore((state) => state.createLead)
   const updateLead = useLeadsStore((state) => state.updateLead)
@@ -68,36 +67,60 @@ export function FichaLead({ lead, isNew, onCreate }: Props) {
     ])
   }
 
-async function handleSave() {
-  if (isNew) {
-    await fetch("/api/leads", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
+  const [loading, setLoading] = useState(false)
 
-    if (onCreate) onCreate(data)
-  } else {
-    // 🔥 atualiza lead
-    await fetch(`/api/leads/${data.id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    })
+  async function handleSave() {
+    try {
+      setLoading(true)
 
-    // 🔥 salva cada cotação
-    for (const cotacao of data.ficha.cotacoes) {
-      await fetch(`/api/leads/${data.id}/cotacoes`, {
-        method: "POST",
-        body: JSON.stringify({
-          titulo: cotacao.titulo,
-          link: cotacao.link,
-          valor: cotacao.valor,
-        }),
-      })
+      if (isNew) {
+        const res = await fetch("/api/leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+
+        if (!res.ok) throw new Error("Erro ao criar lead")
+
+        const created = await res.json()
+
+        if (onCreate) onCreate(created)
+        setData(created)
+
+      } else {
+        const res = await fetch(`/api/leads/${data.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+
+        if (!res.ok) throw new Error("Erro ao atualizar lead")
+
+        // 🔥 evita duplicar cotação
+        for (const cotacao of data.ficha.cotacoes) {
+          if (!cotacao.titulo) continue
+
+          await fetch(`/api/leads/${data.id}/cotacoes`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              titulo: cotacao.titulo,
+              link: cotacao.link,
+              valor: cotacao.valor,
+            }),
+          })
+        }
+      }
+
+      setEditing(false)
+
+    } catch (err) {
+      console.error(err)
+      alert("Erro ao salvar")
+    } finally {
+      setLoading(false)
     }
   }
-
-  setEditing(false)
-}
 
   const isAtrasado =
     data.ficha.proximoContato &&
@@ -151,9 +174,10 @@ async function handleSave() {
 
         <button
           onClick={editing ? handleSave : () => setEditing(true)}
+          disabled={loading}
           className={editing ? "btn-success" : "btn-primary"}
         >
-          {editing ? "Salvar" : "Editar"}
+          {loading ? "Salvando..." : editing ? "Salvar" : "Editar"}
         </button>
       </div>
 
@@ -290,7 +314,9 @@ async function handleSave() {
             onChange={(e) =>
               updateFicha(
                 "idades",
-                e.target.value.split(",").map((i) => Number(i.trim()))
+                e.target.value.split(",")
+                  .map((i) => Number(i.trim()))
+                  .filter((n) => !isNaN(n))
               )
             }
           />
@@ -306,7 +332,7 @@ async function handleSave() {
             onChange={(e) =>
               updateFicha(
                 "hospitaisPreferidos",
-                e.target.value.split(",")
+                e.target.value.split(",").map((h) => h.trim())
               )
             }
           />

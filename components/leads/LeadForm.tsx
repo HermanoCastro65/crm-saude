@@ -9,6 +9,17 @@ type Props = {
   onSubmit?: (lead: Lead) => void
 }
 
+function normalizeStatus(status: string) {
+  if (status === "Cotação") return "Cotacao"
+  if (status === "Cotacao") return "Cotacao"
+  if (status === "Novo") return "Novo"
+  if (status === "Contato") return "Contato"
+  if (status === "Fechado") return "Fechado"
+  if (status === "Perdido") return "Perdido"
+
+  return "Novo"
+}
+
 export function LeadForm({ initialData, onSubmit }: Props) {
   const createLead = useLeadsStore((state) => state.createLead)
   const updateLead = useLeadsStore((state) => state.updateLead)
@@ -33,6 +44,8 @@ export function LeadForm({ initialData, onSubmit }: Props) {
     }
   )
 
+  const [loading, setLoading] = useState(false)
+
   function handleChange(field: string, value: any) {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
@@ -44,16 +57,37 @@ export function LeadForm({ initialData, onSubmit }: Props) {
     }))
   }
 
-  async function handleSubmit(e: any) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (initialData) {
-      await updateLead(form)
-    } else {
-      await createLead(form)
-    }
+    try {
+      setLoading(true)
 
-    if (onSubmit) onSubmit(form)
+      if (!form.nome || !form.telefone) {
+        alert("Nome e telefone são obrigatórios")
+        return
+      }
+
+      // 🔥 AQUI ESTÁ A CORREÇÃO PRINCIPAL
+      const payload: Lead = {
+        ...form,
+        status: normalizeStatus(form.status) as any,
+      }
+
+      if (initialData) {
+        await updateLead(payload)
+      } else {
+        await createLead(payload)
+      }
+
+      if (onSubmit) onSubmit(payload)
+
+    } catch (err) {
+      console.error(err)
+      alert("Erro ao salvar lead")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -61,14 +95,14 @@ export function LeadForm({ initialData, onSubmit }: Props) {
       <input
         placeholder="Nome"
         className="w-full border p-2 rounded"
-        value={form.nome}
+        value={form.nome || ""}
         onChange={(e) => handleChange("nome", e.target.value)}
       />
 
       <input
         placeholder="Telefone"
         className="w-full border p-2 rounded"
-        value={form.telefone}
+        value={form.telefone || ""}
         onChange={(e) => handleChange("telefone", e.target.value)}
       />
 
@@ -82,9 +116,22 @@ export function LeadForm({ initialData, onSubmit }: Props) {
       <input
         placeholder="Origem"
         className="w-full border p-2 rounded"
-        value={form.origem}
+        value={form.origem || ""}
         onChange={(e) => handleChange("origem", e.target.value)}
       />
+
+      {/* 🔥 SELECT DE STATUS (IMPORTANTE) */}
+      <select
+        className="w-full border p-2 rounded"
+        value={form.status}
+        onChange={(e) => handleChange("status", e.target.value)}
+      >
+        <option>Novo</option>
+        <option>Contato</option>
+        <option>Cotação</option>
+        <option>Fechado</option>
+        <option>Perdido</option>
+      </select>
 
       <select
         className="w-full border p-2 rounded"
@@ -105,7 +152,7 @@ export function LeadForm({ initialData, onSubmit }: Props) {
         placeholder="Quantidade de vidas"
         type="number"
         className="w-full border p-2 rounded"
-        value={form.ficha.quantidadeVidas}
+        value={form.ficha.quantidadeVidas || 0}
         onChange={(e) =>
           handleFichaChange("quantidadeVidas", Number(e.target.value))
         }
@@ -114,7 +161,7 @@ export function LeadForm({ initialData, onSubmit }: Props) {
       <input
         placeholder="Localidade"
         className="w-full border p-2 rounded"
-        value={form.ficha.localidade}
+        value={form.ficha.localidade || ""}
         onChange={(e) =>
           handleFichaChange("localidade", e.target.value)
         }
@@ -129,8 +176,11 @@ export function LeadForm({ initialData, onSubmit }: Props) {
         }
       />
 
-      <button className="bg-blue-600 text-white px-4 py-2 rounded">
-        Salvar Lead
+      <button
+        disabled={loading}
+        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+      >
+        {loading ? "Salvando..." : "Salvar Lead"}
       </button>
     </form>
   )
